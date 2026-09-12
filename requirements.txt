@@ -1,0 +1,6 @@
+huggingface-hub>=0.34,<2
+keras>=3.13,<4
+numpy>=1.26,<3
+pillow>=10,<13
+streamlit>=1.40,<2
+tensorflow>=2.18,<2.22
