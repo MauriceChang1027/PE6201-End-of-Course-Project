@@ -2,7 +2,7 @@
 
 The primary safety outcome is binary referable diabetic retinopathy, defined as APTOS grade 2 or above. The fixed split uses 70% train, 15% validation, and 15% test within every grade with seed `6201`. The train assignment is recorded for reproducibility but is not used to retrain the public model.
 
-The validation sweep tests confidence thresholds from 0.00 to 0.99. It selects the highest-coverage threshold whose answered cases reach at least 90% referable-DR sensitivity while no more than 15% of cases abstain. If no threshold meets both conditions, it records `calibration_target_met: false` and chooses the allowed threshold with the best answered sensitivity, then coverage and specificity. Test labels never influence this choice.
+The validation sweep tests confidence thresholds from 0.00 to 0.99. An image is answered only if it passes the quality gate and reaches the confidence threshold. The calibration selects the highest-coverage threshold whose answered cases reach at least 90% referable-DR sensitivity while no more than 15% of all cases abstain. If no threshold meets both conditions, it records `calibration_target_met: false` and chooses the allowed threshold with the best answered sensitivity, then coverage and specificity. Test labels never influence this choice.
 
 ## Reported systems
 
@@ -23,6 +23,7 @@ Sensitivity is `TP / (TP + FN)`, specificity is `TN / (TN + FP)`, and referable 
 | `test_predictions.csv` | Locked test predictions used for final metrics |
 | `threshold_calibration.csv` | Full validation threshold sweep and selected row |
 | `summary_metrics.csv` | Baselines, raw model, and abstention results |
+| `quality_gate_summary.csv` | Quality pass rate and rejection reasons on the test split |
 | `confusion_matrix_*.csv` | Machine-readable grade and referable-DR matrices |
 | `*.png` | Confusion, calibration, and baseline charts |
 | `evaluation_report.json` | Configuration, result summary, and limitation warning |

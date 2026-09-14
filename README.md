@@ -6,6 +6,8 @@ RetinaGuard is a research prototype for diabetic retinopathy referral triage. It
 
 [![Run APTOS evaluation in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MauriceChang1027/PE6201-End-of-Course-Project/blob/main/notebooks/retinaguard_colab_evaluation.ipynb)
 
+[![Run referral safety evaluation in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MauriceChang1027/PE6201-End-of-Course-Project/blob/main/notebooks/retinaguard_colab_llm_evaluation.ipynb)
+
 ## Safety boundary
 
 This project is not a medical device and must not be used for diagnosis or autonomous referral. The public vision model has been trained on APTOS 2019 only, has not been clinically validated for Hong Kong patients or local cameras, and performs unevenly across severity classes. Every output requires review by a licensed clinician.
@@ -16,11 +18,13 @@ The LLM cannot change the image grade, confidence, urgency, or referral action. 
 
 ```text
 Fundus image
+    -> deterministic image-quality gate
     -> EfficientNetB0 five-grade prediction
     -> 75% confidence gate
     -> deterministic referral rule
     -> structured facts only
     -> OpenRouter referral draft
+    -> programmatic output validation or safe fallback
     -> clinician confirmation
 ```
 
@@ -69,7 +73,15 @@ python -m scripts.evaluate_aptos \
   --output-dir evaluation/results
 ```
 
-The run exports the split manifest, validation and test predictions, threshold sweep, baseline comparison, five-grade and referable-DR confusion matrices, summary CSV, JSON report, and PNG charts. See [`evaluation/README.md`](evaluation/README.md) for metric definitions.
+The run exports the split manifest, validation and test predictions, threshold sweep, baseline comparison, quality-gate pass rate, five-grade and referable-DR confusion matrices, summary CSV, JSON report, and PNG charts. See [`evaluation/README.md`](evaluation/README.md) for metric definitions.
+
+## Safety controls
+
+The deterministic image-quality gate runs before the vision model. It rejects inadequate resolution, extreme exposure, low contrast, blur, and images without a plausible reddish retinal field on a darker background. Rejected images do not reach vision inference or referral generation.
+
+OpenRouter receives only the grade, label, confidence, urgency, action, and a restricted demo reference. The returned draft must preserve every structured fact, contain exactly three sentences, mention clinician review, and avoid blocked unsupported clinical facts. A failed validation or unavailable API produces a labelled deterministic fallback rather than displaying untrusted text. The exact controls and limitations are documented in [`safety/README.md`](safety/README.md).
+
+The referral-safety notebook runs one fixed case for each DR grade using the evaluator's own OpenRouter key. It exports per-case validation, fallback, and latency results. API keys and raw rejected text are not written to the repository.
 
 ## Referral rules
 
@@ -90,22 +102,29 @@ These are transparent demonstration rules, not validated clinical guidelines. Th
 app.py                              Streamlit interface
 notebooks/retinaguard_colab_mvp.ipynb  Colab demonstration
 notebooks/retinaguard_colab_evaluation.ipynb  Reproducible APTOS evaluation
+notebooks/retinaguard_colab_llm_evaluation.ipynb  Five-grade referral safety evaluation
 retinaguard/vision.py               Model loading and inference
 retinaguard/evaluation.py           Fixed split, metrics, and threshold calibration
+retinaguard/quality.py              Deterministic image-quality checks
+retinaguard/pipeline.py             Quality-first analysis orchestration
 retinaguard/triage.py               Confidence gate and referral rules
 retinaguard/referral.py             Constrained OpenRouter request
 scripts/evaluate_aptos.py           Evaluation command-line runner
+scripts/evaluate_referral.py        Fixed LLM safety evaluation
+safety/README.md                    Implemented controls and threat cases
 tests/                              Offline unit tests
 ```
 
 ## Known limitations
 
 - The application keeps a 75% default until a completed evaluation run provides a calibrated value for the final configuration.
+- The image-quality thresholds are engineering heuristics, not a clinically validated quality model. Passing does not prove that an image is a fundus photograph, and failing does not prove that an image is unusable.
 - The model card reports weak performance on minority severity classes.
 - APTOS does not provide a patient identifier, so patient-level leakage cannot be ruled out.
 - The public model reports training on APTOS 2019. Evaluating it on a new split of the same dataset may overlap its original training images and is a reproducibility evaluation, not independent generalisation evidence.
 - The MVP has no independent external-dataset validation, image-quality model, camera-shift detection, or subgroup evaluation.
 - The referral rules and generated text have not been clinically validated.
+- The LLM validator checks structured consistency and selected unsupported terms; it cannot establish medical truth or replace clinician review.
 - The system does not assess diabetic macular oedema or other eye diseases.
 
 ## Data and model licences

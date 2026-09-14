@@ -7,4 +7,5 @@ __pycache__/
 .streamlit/secrets.toml
 models/
 evaluation/results/
+evaluation/llm_results/
 data/

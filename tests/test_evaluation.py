@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
 import pandas as pd
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from retinaguard.evaluation import (
     assign_fixed_splits,
@@ -115,7 +115,17 @@ class EvaluationTest(unittest.TestCase):
             labels_path = root / "train.csv"
             labels.to_csv(labels_path, index=False)
             for image_id in labels["id_code"]:
-                Image.new("RGB", (16, 16)).save(images / f"{image_id}.png")
+                image = Image.new("RGB", (512, 512), "black")
+                draw = ImageDraw.Draw(image)
+                draw.ellipse((24, 24, 488, 488), fill=(160, 75, 35))
+                draw.ellipse((220, 210, 275, 265), fill=(230, 170, 90))
+                for offset in range(-160, 180, 20):
+                    draw.line(
+                        (256, 238, 256 + offset, 400),
+                        fill=(70, 30, 20),
+                        width=4,
+                    )
+                image.save(images / f"{image_id}.png")
             args = SimpleNamespace(
                 output_dir=output,
                 labels_csv=labels_path,
@@ -129,6 +139,7 @@ class EvaluationTest(unittest.TestCase):
             expected = {
                 "split_manifest.csv",
                 "summary_metrics.csv",
+                "quality_gate_summary.csv",
                 "threshold_calibration.csv",
                 "evaluation_report.json",
                 "confusion_matrix_grade.png",

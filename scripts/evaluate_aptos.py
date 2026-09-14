@@ -14,6 +14,7 @@ from retinaguard.evaluation import (
     confusion_matrix,
     evaluation_summary,
 )
+from retinaguard.quality import assess_image_quality
 from retinaguard.vision import VisionClassifier
 
 
@@ -65,8 +66,17 @@ def resolve_image_paths(frame: pd.DataFrame, images_dir: Path) -> pd.Series:
 def predict_split(classifier, split_frame, images_dir, batch_size):
     frame = split_frame.copy().reset_index(drop=True)
     paths = resolve_image_paths(frame, images_dir)
+    quality = [assess_image_quality(path) for path in paths]
     predictions = classifier.predict_batch(paths.tolist(), batch_size=batch_size)
     frame["image_path"] = paths.astype(str)
+    frame["quality_passed"] = [assessment.passed for assessment in quality]
+    frame["quality_issue_codes"] = [
+        ";".join(issue.code for issue in assessment.issues) for assessment in quality
+    ]
+    for metric in quality[0].metrics:
+        frame[f"quality_{metric}"] = [
+            assessment.metrics[metric] for assessment in quality
+        ]
     frame["predicted_grade"] = [prediction.grade for prediction in predictions]
     frame["confidence"] = [prediction.confidence for prediction in predictions]
     for grade in range(5):
@@ -157,6 +167,36 @@ def plot_baselines(summary, path):
     plt.close(figure)
 
 
+def quality_summary(frame):
+    issue_counts = (
+        frame.loc[frame["quality_issue_codes"] != "", "quality_issue_codes"]
+        .str.split(";")
+        .explode()
+        .value_counts()
+    )
+    rows = [
+        {
+            "outcome": "passed",
+            "count": int(frame["quality_passed"].sum()),
+            "rate": float(frame["quality_passed"].mean()),
+        },
+        {
+            "outcome": "rejected",
+            "count": int((~frame["quality_passed"]).sum()),
+            "rate": float((~frame["quality_passed"]).mean()),
+        },
+    ]
+    rows.extend(
+        {
+            "outcome": f"issue:{name}",
+            "count": int(count),
+            "rate": float(count / len(frame)),
+        }
+        for name, count in issue_counts.items()
+    )
+    return pd.DataFrame(rows)
+
+
 def run_evaluation(args, classifier=None):
     args.output_dir.mkdir(parents=True, exist_ok=True)
     labels = load_labels(args.labels_csv)
@@ -187,12 +227,14 @@ def run_evaluation(args, classifier=None):
     calibration.table.to_csv(args.output_dir / "threshold_calibration.csv", index=False)
     summary = evaluation_summary(test, calibration.threshold)
     summary.to_csv(args.output_dir / "summary_metrics.csv", index=False)
+    quality_results = quality_summary(test)
+    quality_results.to_csv(args.output_dir / "quality_gate_summary.csv", index=False)
 
     grade_matrix = confusion_matrix(test["diagnosis"], test["predicted_grade"], range(5))
     raw_binary_matrix = confusion_matrix(
         test["true_referable"], test["predicted_referable"], [False, True]
     )
-    accepted = test["confidence"] >= calibration.threshold
+    accepted = (test["confidence"] >= calibration.threshold) & test["quality_passed"]
     operational_predictions = test["predicted_referable"] | ~accepted
     operational_matrix = confusion_matrix(
         test["true_referable"], operational_predictions, [False, True]
@@ -242,6 +284,12 @@ def run_evaluation(args, classifier=None):
         "target_sensitivity": args.target_sensitivity,
         "max_abstention_rate": args.max_abstention_rate,
         "calibration_target_met": calibration.target_met,
+        "test_quality_pass_rate": float(test["quality_passed"].mean()),
+        "test_quality_issue_counts": {
+            row["outcome"]: row["count"]
+            for row in quality_results.to_dict(orient="records")
+            if row["outcome"].startswith("issue:")
+        },
         "test_metrics": json.loads(summary.to_json(orient="records")),
         "warning": (
             "The public model reports APTOS training data; this evaluation may overlap "

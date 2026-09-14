@@ -107,6 +107,8 @@ def binary_metrics(y_true, y_pred) -> dict[str, float | int]:
 
 def threshold_metrics(frame: pd.DataFrame, threshold: float) -> dict[str, float | int]:
     accepted = frame["confidence"].to_numpy() >= threshold
+    if "quality_passed" in frame:
+        accepted &= frame["quality_passed"].to_numpy(dtype=bool)
     actual = frame["true_referable"].to_numpy(dtype=bool)
     predicted = frame["predicted_referable"].to_numpy(dtype=bool)
     answered = binary_metrics(actual[accepted], predicted[accepted])
@@ -165,6 +167,8 @@ def evaluation_summary(test_predictions: pd.DataFrame, threshold: float) -> pd.D
     actual = test_predictions["true_referable"].to_numpy(dtype=bool)
     predicted = test_predictions["predicted_referable"].to_numpy(dtype=bool)
     accepted = test_predictions["confidence"].to_numpy() >= threshold
+    if "quality_passed" in test_predictions:
+        accepted &= test_predictions["quality_passed"].to_numpy(dtype=bool)
     rows = []
 
     def add(name, metrics, coverage=1.0, abstention_rate=0.0):
