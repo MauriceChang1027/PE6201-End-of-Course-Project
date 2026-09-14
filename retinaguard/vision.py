@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
+from typing import Iterable
 
 import numpy as np
 from PIL import Image
 
-from .config import GRADE_LABELS, MODEL_FILENAME, MODEL_REPO_ID
+from .config import GRADE_LABELS, MODEL_FILENAME, MODEL_REPO_ID, MODEL_REVISION
 from .triage import Prediction
 
 
@@ -23,6 +24,7 @@ class VisionClassifier:
         model_path = hf_hub_download(
             repo_id=MODEL_REPO_ID,
             filename=MODEL_FILENAME,
+            revision=MODEL_REVISION,
         )
         self._model = keras.saving.load_model(model_path, compile=False)
         return self
@@ -31,6 +33,28 @@ class VisionClassifier:
         self.load()
         prepared = self._prepare_image(image)
         scores = np.asarray(self._model.predict(prepared, verbose=0))[0]
+        return self._to_prediction(scores)
+
+    def predict_batch(
+        self,
+        images: Iterable[Image.Image | str | Path],
+        batch_size: int = 32,
+    ) -> list[Prediction]:
+        if batch_size < 1:
+            raise ValueError("Batch size must be at least one.")
+        self.load()
+        image_list = list(images)
+        predictions = []
+        for start in range(0, len(image_list), batch_size):
+            batch = np.concatenate(
+                [self._prepare_image(image) for image in image_list[start : start + batch_size]],
+                axis=0,
+            )
+            scores = np.asarray(self._model.predict(batch, verbose=0))
+            predictions.extend(self._to_prediction(row) for row in scores)
+        return predictions
+
+    def _to_prediction(self, scores: np.ndarray) -> Prediction:
         probabilities = self._as_probabilities(scores)
         grade = int(np.argmax(probabilities))
         return Prediction(

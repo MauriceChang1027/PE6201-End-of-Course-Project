@@ -16,6 +16,11 @@ class FakeModel:
         return self.output
 
 
+class BatchFakeModel:
+    def predict(self, images, verbose=0):
+        return np.tile([0.05, 0.10, 0.70, 0.10, 0.05], (len(images), 1))
+
+
 class VisionClassifierTest(unittest.TestCase):
     def test_predict_returns_highest_probability_grade(self):
         model = FakeModel([0.02, 0.03, 0.80, 0.10, 0.05])
@@ -30,6 +35,12 @@ class VisionClassifierTest(unittest.TestCase):
         result = VisionClassifier(model=model).predict(Image.new("RGB", (50, 50)))
         self.assertEqual(result.grade, 3)
         self.assertAlmostEqual(sum(result.probabilities), 1.0, places=6)
+
+    def test_batch_prediction_preserves_image_count(self):
+        images = [Image.new("RGB", (50, 50)) for _ in range(5)]
+        results = VisionClassifier(model=BatchFakeModel()).predict_batch(images, batch_size=2)
+        self.assertEqual(len(results), 5)
+        self.assertTrue(all(result.grade == 2 for result in results))
 
 
 if __name__ == "__main__":

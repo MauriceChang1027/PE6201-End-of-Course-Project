@@ -2,6 +2,9 @@ __pycache__/
 *.py[cod]
 .env
 .venv/
+.test-deps/
 .pytest_cache/
 .streamlit/secrets.toml
 models/
+evaluation/results/
+data/
