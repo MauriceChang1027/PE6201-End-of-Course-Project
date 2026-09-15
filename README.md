@@ -20,6 +20,7 @@ The LLM cannot change the image grade, confidence, urgency, or referral action. 
 Fundus image
     -> deterministic image-quality gate
     -> EfficientNetB0 five-grade prediction
+    -> class-specific Grad-CAM attribution
     -> 75% confidence gate
     -> deterministic referral rule
     -> structured facts only
@@ -83,6 +84,18 @@ OpenRouter receives only the grade, label, confidence, urgency, action, and a re
 
 The referral-safety notebook runs one fixed case for each DR grade using the evaluator's own OpenRouter key. It exports per-case validation, fallback, and latency results. API keys and raw rejected text are not written to the repository.
 
+## Grad-CAM explanation
+
+Passing images receive a class-specific Grad-CAM heatmap and overlay for the displayed grade. The implementation selects the last connected four-dimensional feature output instead of relying on a hard-coded internal layer name. A standalone command can export the heatmap, overlay, and machine-readable metadata for a report:
+
+```bash
+python -m scripts.explain_image \
+  --image /path/to/fundus.png \
+  --output-dir explanations
+```
+
+Grad-CAM is presented only as a coarse model-attribution aid. It is not lesion segmentation or clinical evidence. See [`explainability/README.md`](explainability/README.md) for the method and interpretation boundary.
+
 ## Referral rules
 
 | Grade | Result | Demonstration action |
@@ -105,13 +118,16 @@ notebooks/retinaguard_colab_evaluation.ipynb  Reproducible APTOS evaluation
 notebooks/retinaguard_colab_llm_evaluation.ipynb  Five-grade referral safety evaluation
 retinaguard/vision.py               Model loading and inference
 retinaguard/evaluation.py           Fixed split, metrics, and threshold calibration
+retinaguard/explainability.py       Grad-CAM generation and overlay
 retinaguard/quality.py              Deterministic image-quality checks
 retinaguard/pipeline.py             Quality-first analysis orchestration
 retinaguard/triage.py               Confidence gate and referral rules
 retinaguard/referral.py             Constrained OpenRouter request
 scripts/evaluate_aptos.py           Evaluation command-line runner
 scripts/evaluate_referral.py        Fixed LLM safety evaluation
+scripts/explain_image.py            Reproducible single-image Grad-CAM export
 safety/README.md                    Implemented controls and threat cases
+explainability/README.md            Grad-CAM method and interpretation limits
 tests/                              Offline unit tests
 ```
 
@@ -125,6 +141,7 @@ tests/                              Offline unit tests
 - The MVP has no independent external-dataset validation, image-quality model, camera-shift detection, or subgroup evaluation.
 - The referral rules and generated text have not been clinically validated.
 - The LLM validator checks structured consistency and selected unsupported terms; it cannot establish medical truth or replace clinician review.
+- Grad-CAM is spatially coarse and unvalidated for lesion localisation. It can highlight artefacts and must not be treated as a clinical explanation.
 - The system does not assess diabetic macular oedema or other eye diseases.
 
 ## Data and model licences

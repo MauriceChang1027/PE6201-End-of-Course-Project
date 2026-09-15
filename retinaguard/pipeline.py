@@ -28,3 +28,11 @@ class RetinaGuardPipeline:
             quality=quality,
             triage=apply_triage_rules(prediction),
         )
+
+    def explain(self, image: Image.Image | str | Path, analysis: AnalysisResult):
+        if not analysis.quality.passed or analysis.triage is None:
+            raise ValueError("Grad-CAM is unavailable for an image rejected by the quality gate.")
+        return self.classifier.explain(
+            image,
+            class_index=analysis.triage.prediction.grade,
+        )

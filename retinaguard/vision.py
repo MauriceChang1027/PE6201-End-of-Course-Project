@@ -12,6 +12,7 @@ from .triage import Prediction
 class VisionClassifier:
     def __init__(self, model=None):
         self._model = model
+        self._explainer = None
 
     def load(self):
         if self._model is not None:
@@ -53,6 +54,18 @@ class VisionClassifier:
             scores = np.asarray(self._model.predict(batch, verbose=0))
             predictions.extend(self._to_prediction(row) for row in scores)
         return predictions
+
+    def explain(
+        self,
+        image: Image.Image | str | Path,
+        class_index: int | None = None,
+    ):
+        self.load()
+        if self._explainer is None:
+            from .explainability import GradCamExplainer
+
+            self._explainer = GradCamExplainer(self._model)
+        return self._explainer.explain(image, class_index=class_index)
 
     def _to_prediction(self, scores: np.ndarray) -> Prediction:
         probabilities = self._as_probabilities(scores)

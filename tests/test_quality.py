@@ -58,6 +58,8 @@ class QualityGateTest(unittest.TestCase):
         result = pipeline.analyse(Image.new("RGB", (512, 512)))
         self.assertIsNone(result.triage)
         self.assertEqual(classifier.calls, 0)
+        with self.assertRaises(ValueError):
+            pipeline.explain(Image.new("RGB", (512, 512)), result)
 
     def test_pipeline_calls_model_after_quality_pass(self):
         classifier = CountingClassifier()

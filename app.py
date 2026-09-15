@@ -4,7 +4,7 @@ import os
 import streamlit as st
 from PIL import Image
 
-from retinaguard import OpenRouterClient, RetinaGuardPipeline
+from retinaguard import GradCamError, OpenRouterClient, RetinaGuardPipeline
 from retinaguard.config import CONFIDENCE_THRESHOLD, GRADE_LABELS, OPENROUTER_MODEL
 
 
@@ -39,6 +39,8 @@ if uploaded_file is None:
     st.session_state.pop("analysis_result", None)
     st.session_state.pop("referral_draft", None)
     st.session_state.pop("referral_context", None)
+    st.session_state.pop("explanation", None)
+    st.session_state.pop("explanation_error", None)
 
 if uploaded_file:
     upload_bytes = uploaded_file.getvalue()
@@ -47,17 +49,28 @@ if uploaded_file:
         st.session_state["upload_digest"] = upload_digest
         st.session_state.pop("analysis_result", None)
         st.session_state.pop("referral_draft", None)
+        st.session_state.pop("explanation", None)
+        st.session_state.pop("explanation_error", None)
     referral_context = (upload_digest, patient_reference, model_name)
     if st.session_state.get("referral_context") != referral_context:
         st.session_state.pop("referral_draft", None)
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded fundus image", use_container_width=True)
+    st.image(image, caption="Uploaded fundus image", width="stretch")
 
     if st.button("Analyse image", type="primary"):
-        with st.spinner("Loading the vision model and analysing the image..."):
-            analysis = load_pipeline().analyse(image)
+        pipeline = load_pipeline()
+        with st.spinner("Checking image quality and running the vision model..."):
+            analysis = pipeline.analyse(image)
         st.session_state["analysis_result"] = analysis
         st.session_state.pop("referral_draft", None)
+        st.session_state.pop("explanation", None)
+        st.session_state.pop("explanation_error", None)
+        if analysis.triage is not None:
+            with st.spinner("Generating the Grad-CAM explanation..."):
+                try:
+                    st.session_state["explanation"] = pipeline.explain(image, analysis)
+                except GradCamError as exc:
+                    st.session_state["explanation_error"] = str(exc)
 
 analysis = st.session_state.get("analysis_result")
 if analysis:
@@ -91,6 +104,33 @@ if result is not None:
         )
     ]
     st.bar_chart(probability_data, x="Grade", y="Probability", horizontal=True)
+
+    explanation = st.session_state.get("explanation")
+    explanation_error = st.session_state.get("explanation_error")
+    st.subheader("Model explanation")
+    if explanation:
+        heatmap_column, overlay_column = st.columns(2)
+        heatmap_column.image(
+            explanation.heatmap_image,
+            caption="Grad-CAM heatmap",
+            width="stretch",
+        )
+        overlay_column.image(
+            explanation.overlay,
+            caption="Heatmap overlay",
+            width="stretch",
+        )
+        st.caption(
+            f"Explains the Grade {explanation.class_index} score using layer "
+            f"{explanation.layer_name}. Warmer yellow and red regions contributed "
+            "more strongly."
+        )
+        st.warning(
+            "Grad-CAM is a coarse attribution map, not lesion segmentation or proof that "
+            "the highlighted region is clinically abnormal."
+        )
+    elif explanation_error:
+        st.warning(f"Grad-CAM was unavailable: {explanation_error}")
 
     if result.abstained:
         st.error(
