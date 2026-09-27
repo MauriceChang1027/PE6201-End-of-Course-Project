@@ -70,6 +70,16 @@ def main():
         triage, args.patient_reference
     )
     llm_latency_seconds = time.perf_counter() - started
+    safe_issue_prefixes = (
+        "Missing or changed ",
+        "The draft must contain ",
+        "Conflicting ",
+        "Unsupported clinical facts detected:",
+    )
+    validation_issues = [
+        issue if issue.startswith(safe_issue_prefixes) else "OpenRouter request or response failed."
+        for issue in referral.validation_issues
+    ]
 
     evidence = {
         "captured_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -97,6 +107,7 @@ def main():
         "llm_model": OPENROUTER_MODEL,
         "llm_latency_seconds": round(llm_latency_seconds, 3),
         "llm_validation_passed": referral.validation_passed,
+        "llm_validation_issues": validation_issues,
         "used_fallback": referral.used_fallback,
         "referral_draft": referral.text,
         "patient_reference": args.patient_reference,
