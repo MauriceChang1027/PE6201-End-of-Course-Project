@@ -52,7 +52,11 @@ class OpenRouterClient:
                         "You draft concise referral notes for clinician review. Use only the supplied facts. "
                         "Do not add symptoms, history, examination findings, diagnoses, or patient details. "
                         "Include every supplied fact verbatim, including 'Grade' before the grade number. "
-                        "Do not change the grade, confidence, urgency, or action. Write exactly three sentences."
+                        "Do not change the grade, confidence, urgency, or action. Write exactly three sentences. "
+                        "The first sentence must include the exact patient_reference, automated_grade, "
+                        "grade_label, and model_confidence values. The second must include the exact "
+                        "urgency and required_action values. The third must include the exact status "
+                        "phrase 'licensed clinician review only'. Do not omit any field."
                     ),
                 },
                 {

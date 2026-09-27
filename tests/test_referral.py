@@ -53,6 +53,8 @@ class ReferralClientTest(unittest.TestCase):
             triage, "DEMO-001"
         )
         facts = json.loads(captured["messages"][1]["content"])
+        self.assertIn("exact patient_reference", captured["messages"][0]["content"])
+        self.assertIn("licensed clinician review only", captured["messages"][0]["content"])
         self.assertEqual(
             set(facts),
             {
