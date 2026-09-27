@@ -41,6 +41,8 @@ The vision model is downloaded at runtime from [`Aldahmashi/DR-EfficientNetB0`](
 
 The notebook downloads the model from Hugging Face. The first run therefore requires internet access and can take several minutes. No API key is stored in the notebook or repository.
 
+For a demonstration using the evaluated confidence threshold, run the APTOS evaluation notebook first. If the MVP notebook uses the same Colab runtime, it reads `evaluation/results/evaluation_report.json` automatically. In a separate runtime, upload the exported `evaluation_report.json` to `/content` using Colab's Files panel before the analysis cell. When no report is present, the MVP displays the provisional 75% threshold. The evaluation results archive includes `results_summary.md` with measured results and limitations.
+
 ## Run the Streamlit interface
 
 ```bash
@@ -133,7 +135,7 @@ tests/                              Offline unit tests
 
 ## Known limitations
 
-- The application keeps a 75% default until a completed evaluation run provides a calibrated value for the final configuration.
+- The application uses a clearly labelled provisional 75% threshold until a completed evaluation run provides a selected value. If the validation target was not met, the application shows a warning.
 - The image-quality thresholds are engineering heuristics, not a clinically validated quality model. Passing does not prove that an image is a fundus photograph, and failing does not prove that an image is unusable.
 - The model card reports weak performance on minority severity classes.
 - APTOS does not provide a patient identifier, so patient-level leakage cannot be ruled out.

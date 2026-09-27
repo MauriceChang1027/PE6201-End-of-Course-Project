@@ -14,7 +14,7 @@ from retinaguard.evaluation import (
     evaluation_summary,
 )
 from retinaguard.triage import Prediction
-from scripts.evaluate_aptos import run_evaluation
+from scripts.evaluate_aptos import run_evaluation, write_summary_markdown
 
 
 class PerfectClassifier:
@@ -95,6 +95,41 @@ class EvaluationTest(unittest.TestCase):
         self.assertEqual(always_refer["sensitivity"], 1.0)
         self.assertEqual(always_refer["specificity"], 0.0)
 
+    def test_readable_report_uses_measured_values(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "results_summary.md"
+            summary = pd.DataFrame(
+                [
+                    {
+                        "system": "Vision model (raw)",
+                        "n": 20,
+                        "coverage": 1.0,
+                        "sensitivity": 0.9,
+                        "specificity": 0.8,
+                        "accuracy": 0.85,
+                        "fn": 1,
+                    }
+                ]
+            )
+            report = {
+                "model_repo": "demo/model",
+                "model_revision": "revision",
+                "labels_sha256": "digest",
+                "split_seed": 6201,
+                "split_counts": {"validation": 10, "test": 20},
+                "selected_threshold": 0.75,
+                "calibration_target_met": False,
+                "target_sensitivity": 0.9,
+                "max_abstention_rate": 0.15,
+                "test_quality_pass_rate": 0.8,
+                "warning": "Not independent clinical validation.",
+            }
+            write_summary_markdown(summary, report, path)
+            text = path.read_text(encoding="utf-8")
+        self.assertIn("| Vision model (raw) | 20 | 100.0% | 90.0% | 80.0% | 85.0% | 1 |", text)
+        self.assertIn("Validation target met: no", text)
+        self.assertIn(report["warning"], text)
+
     @unittest.skipUnless(find_spec("matplotlib"), "matplotlib is not installed")
     def test_end_to_end_run_writes_all_result_types(self):
         with TemporaryDirectory() as directory:
@@ -142,6 +177,7 @@ class EvaluationTest(unittest.TestCase):
                 "quality_gate_summary.csv",
                 "threshold_calibration.csv",
                 "evaluation_report.json",
+                "results_summary.md",
                 "confusion_matrix_grade.png",
                 "confusion_matrix_referable_raw.png",
                 "baseline_comparison.png",

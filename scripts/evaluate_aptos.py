@@ -197,6 +197,36 @@ def quality_summary(frame):
     return pd.DataFrame(rows)
 
 
+def write_summary_markdown(summary, report, path):
+    def rate(value):
+        return f"{value:.1%}" if pd.notna(value) else "n/a"
+
+    lines = [
+        "# RetinaGuard APTOS evaluation results",
+        "",
+        f"Model: `{report['model_repo']}` at revision `{report['model_revision']}`.",
+        f"APTOS labels SHA-256: `{report['labels_sha256']}`.",
+        f"Split seed: `{report['split_seed']}`; validation and test counts: "
+        f"{report['split_counts'].get('validation', 0)} and {report['split_counts'].get('test', 0)}.",
+        f"Selected confidence threshold: {report['selected_threshold']:.0%}.",
+        f"Validation target met: {'yes' if report['calibration_target_met'] else 'no'} "
+        f"(target sensitivity {report['target_sensitivity']:.0%}; "
+        f"maximum abstention {report['max_abstention_rate']:.0%}).",
+        f"Test image-quality pass rate: {report['test_quality_pass_rate']:.1%}.",
+        "",
+        "| System | Cases | Coverage | Sensitivity | Specificity | Accuracy | False negatives |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for row in summary.itertuples(index=False):
+        lines.append(
+            f"| {row.system} | {row.n} | {rate(row.coverage)} | "
+            f"{rate(row.sensitivity)} | {rate(row.specificity)} | "
+            f"{rate(row.accuracy)} | {row.fn} |"
+        )
+    lines.extend(["", report["warning"], ""])
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
 def run_evaluation(args, classifier=None):
     args.output_dir.mkdir(parents=True, exist_ok=True)
     labels = load_labels(args.labels_csv)
@@ -299,6 +329,7 @@ def run_evaluation(args, classifier=None):
     (args.output_dir / "evaluation_report.json").write_text(
         json.dumps(report, indent=2, allow_nan=False), encoding="utf-8"
     )
+    write_summary_markdown(summary, report, args.output_dir / "results_summary.md")
     print(summary.to_string(index=False))
     print(f"\nSelected threshold: {calibration.threshold:.2f}")
     print(f"Results saved to: {args.output_dir.resolve()}")

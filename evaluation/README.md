@@ -27,5 +27,8 @@ Sensitivity is `TP / (TP + FN)`, specificity is `TN / (TN + FP)`, and referable 
 | `confusion_matrix_*.csv` | Machine-readable grade and referable-DR matrices |
 | `*.png` | Confusion, calibration, and baseline charts |
 | `evaluation_report.json` | Configuration, result summary, and limitation warning |
+| `results_summary.md` | Readable result table and evaluation limitations for the final report |
 
 APTOS images and generated results are intentionally excluded from Git. A completed run should be preserved with the submitted report or release artefacts so that reported numbers are traceable to the exact output files.
+
+The demonstration loads `selected_threshold` from `evaluation_report.json` when that file is present in `evaluation/results`. The report must match the configured model and revision. Without a completed evaluation, the demonstration clearly labels its 75% threshold as provisional. A failed calibration target is displayed as a warning; the selected threshold is still used so the demonstration matches the reported evaluation configuration.

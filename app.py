@@ -5,12 +5,12 @@ import streamlit as st
 from PIL import Image
 
 from retinaguard import GradCamError, OpenRouterClient, RetinaGuardPipeline
-from retinaguard.config import CONFIDENCE_THRESHOLD, GRADE_LABELS, OPENROUTER_MODEL
+from retinaguard.config import GRADE_LABELS, OPENROUTER_MODEL, load_confidence_setting
 
 
 @st.cache_resource
-def load_pipeline() -> RetinaGuardPipeline:
-    return RetinaGuardPipeline()
+def load_pipeline(threshold: float) -> RetinaGuardPipeline:
+    return RetinaGuardPipeline(confidence_threshold=threshold)
 
 
 st.set_page_config(page_title="RetinaGuard", page_icon="👁️", layout="centered")
@@ -20,6 +20,13 @@ st.warning(
     "Research prototype only. It is not a diagnostic device and every result "
     "requires licensed clinician review."
 )
+confidence_setting = load_confidence_setting()
+st.caption(
+    f"Confidence threshold: {confidence_setting.threshold:.0%} "
+    f"({confidence_setting.source})."
+)
+if confidence_setting.target_met is False:
+    st.warning("The APTOS evaluation did not meet the sensitivity and abstention targets.")
 
 with st.sidebar:
     st.header("Settings")
@@ -35,7 +42,7 @@ with st.sidebar:
 uploaded_file = st.file_uploader("Upload a colour fundus image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is None:
-    st.session_state.pop("upload_digest", None)
+    st.session_state.pop("analysis_context", None)
     st.session_state.pop("analysis_result", None)
     st.session_state.pop("referral_draft", None)
     st.session_state.pop("referral_context", None)
@@ -45,8 +52,9 @@ if uploaded_file is None:
 if uploaded_file:
     upload_bytes = uploaded_file.getvalue()
     upload_digest = hashlib.sha256(upload_bytes).hexdigest()
-    if st.session_state.get("upload_digest") != upload_digest:
-        st.session_state["upload_digest"] = upload_digest
+    analysis_context = (upload_digest, confidence_setting.threshold)
+    if st.session_state.get("analysis_context") != analysis_context:
+        st.session_state["analysis_context"] = analysis_context
         st.session_state.pop("analysis_result", None)
         st.session_state.pop("referral_draft", None)
         st.session_state.pop("explanation", None)
@@ -58,7 +66,7 @@ if uploaded_file:
     st.image(image, caption="Uploaded fundus image", width="stretch")
 
     if st.button("Analyse image", type="primary"):
-        pipeline = load_pipeline()
+        pipeline = load_pipeline(confidence_setting.threshold)
         with st.spinner("Checking image quality and running the vision model..."):
             analysis = pipeline.analyse(image)
         st.session_state["analysis_result"] = analysis
@@ -134,7 +142,7 @@ if result is not None:
 
     if result.abstained:
         st.error(
-            f"The confidence is below the {CONFIDENCE_THRESHOLD:.0%} threshold. "
+            f"The confidence is below the {confidence_setting.threshold:.0%} threshold. "
             "RetinaGuard abstained and will not generate a routine referral conclusion."
         )
     else:

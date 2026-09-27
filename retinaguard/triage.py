@@ -31,7 +31,7 @@ def apply_triage_rules(
         raise ValueError("Grade must be between 0 and 4.")
     if not 0.0 <= prediction.confidence <= 1.0:
         raise ValueError("Confidence must be between 0 and 1.")
-    if not 0.0 < confidence_threshold <= 1.0:
+    if not 0.0 <= confidence_threshold <= 1.0:
         raise ValueError("Confidence threshold must be between 0 and 1.")
 
     if prediction.confidence < confidence_threshold:

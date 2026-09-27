@@ -72,6 +72,18 @@ class QualityGateTest(unittest.TestCase):
         self.assertEqual(result.triage.prediction.grade, 2)
         self.assertEqual(classifier.calls, 1)
 
+    def test_pipeline_uses_selected_confidence_threshold(self):
+        classifier = CountingClassifier()
+        passed = QualityAssessment(passed=True, issues=(), metrics={})
+        pipeline = RetinaGuardPipeline(
+            classifier=classifier,
+            quality_checker=lambda image: passed,
+            confidence_threshold=0.95,
+        )
+        result = pipeline.analyse(Image.new("RGB", (512, 512)))
+        self.assertTrue(result.triage.abstained)
+        self.assertEqual(classifier.calls, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,7 @@ from pathlib import Path
 
 from PIL import Image
 
+from .config import CONFIDENCE_THRESHOLD
 from .quality import QualityAssessment, assess_image_quality
 from .triage import TriageResult, apply_triage_rules
 from .vision import VisionClassifier
@@ -15,9 +16,15 @@ class AnalysisResult:
 
 
 class RetinaGuardPipeline:
-    def __init__(self, classifier=None, quality_checker=assess_image_quality):
+    def __init__(
+        self,
+        classifier=None,
+        quality_checker=assess_image_quality,
+        confidence_threshold=CONFIDENCE_THRESHOLD,
+    ):
         self.classifier = classifier or VisionClassifier()
         self.quality_checker = quality_checker
+        self.confidence_threshold = confidence_threshold
 
     def analyse(self, image: Image.Image | str | Path) -> AnalysisResult:
         quality = self.quality_checker(image)
@@ -26,7 +33,7 @@ class RetinaGuardPipeline:
         prediction = self.classifier.predict(image)
         return AnalysisResult(
             quality=quality,
-            triage=apply_triage_rules(prediction),
+            triage=apply_triage_rules(prediction, self.confidence_threshold),
         )
 
     def explain(self, image: Image.Image | str | Path, analysis: AnalysisResult):
