@@ -1,9 +1,14 @@
 import unittest
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 from retinaguard.pipeline import RetinaGuardPipeline
-from retinaguard.quality import QualityAssessment, QualityIssue, assess_image_quality
+from retinaguard.quality import (
+    QualityAssessment,
+    QualityIssue,
+    assess_image_quality,
+    quality_thresholds,
+)
 from retinaguard.triage import Prediction
 
 
@@ -27,6 +32,11 @@ class CountingClassifier:
 
 
 class QualityGateTest(unittest.TestCase):
+    def test_calibrated_cutoffs_are_reportable(self):
+        thresholds = quality_thresholds()
+        self.assertEqual(thresholds["min_contrast"], 0.02)
+        self.assertEqual(thresholds["min_sharpness"], 0.00035)
+
     def test_fundus_like_image_passes(self):
         result = assess_image_quality(fundus_like_image())
         self.assertTrue(result.passed, result.issues)
@@ -43,6 +53,16 @@ class QualityGateTest(unittest.TestCase):
         result = assess_image_quality(image)
         self.assertFalse(result.passed)
         self.assertIn("blur", {issue.code for issue in result.issues})
+
+    def test_moderate_low_contrast_does_not_trigger_quality_rejection(self):
+        image = ImageEnhance.Contrast(fundus_like_image()).enhance(0.25)
+        result = assess_image_quality(image)
+        self.assertTrue(result.passed, result.issues)
+
+    def test_severe_low_contrast_is_rejected(self):
+        image = ImageEnhance.Contrast(fundus_like_image()).enhance(0.15)
+        result = assess_image_quality(image)
+        self.assertIn("low_contrast", {issue.code for issue in result.issues})
 
     def test_pipeline_does_not_call_model_after_quality_failure(self):
         classifier = CountingClassifier()

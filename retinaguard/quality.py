@@ -10,7 +10,7 @@ from PIL import Image
 MIN_RESOLUTION = 224
 MIN_BRIGHTNESS = 0.08
 MAX_BRIGHTNESS = 0.90
-MIN_CONTRAST = 0.035
+MIN_CONTRAST = 0.020
 MIN_SHARPNESS = 0.00035
 MIN_FIELD_CONTRAST = 0.025
 MIN_COLOURFULNESS = 0.035
@@ -28,6 +28,19 @@ class QualityAssessment:
     passed: bool
     issues: tuple[QualityIssue, ...]
     metrics: dict[str, float | int]
+
+
+def quality_thresholds() -> dict[str, float | int]:
+    return {
+        "min_resolution": MIN_RESOLUTION,
+        "min_brightness": MIN_BRIGHTNESS,
+        "max_brightness": MAX_BRIGHTNESS,
+        "min_contrast": MIN_CONTRAST,
+        "min_sharpness": MIN_SHARPNESS,
+        "min_field_contrast": MIN_FIELD_CONTRAST,
+        "min_colourfulness": MIN_COLOURFULNESS,
+        "min_red_dominance": MIN_RED_DOMINANCE,
+    }
 
 
 def assess_image_quality(image: Image.Image | str | Path) -> QualityAssessment:

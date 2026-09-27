@@ -1,3 +1,4 @@
+import json
 import unittest
 from importlib.util import find_spec
 from pathlib import Path
@@ -121,6 +122,7 @@ class EvaluationTest(unittest.TestCase):
                 "calibration_target_met": False,
                 "target_sensitivity": 0.9,
                 "max_abstention_rate": 0.15,
+                "validation_quality_pass_rate": 0.9,
                 "test_quality_pass_rate": 0.8,
                 "warning": "Not independent clinical validation.",
             }
@@ -128,6 +130,7 @@ class EvaluationTest(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
         self.assertIn("| Vision model (raw) | 20 | 100.0% | 90.0% | 80.0% | 85.0% | 1 |", text)
         self.assertIn("Validation target met: no", text)
+        self.assertIn("Validation image-quality pass rate: 90.0%", text)
         self.assertIn(report["warning"], text)
 
     @unittest.skipUnless(find_spec("matplotlib"), "matplotlib is not installed")
@@ -183,6 +186,10 @@ class EvaluationTest(unittest.TestCase):
                 "baseline_comparison.png",
             }
             self.assertTrue(expected.issubset({path.name for path in output.iterdir()}))
+            report = json.loads((output / "evaluation_report.json").read_text())
+            self.assertEqual(report["quality_thresholds"]["min_contrast"], 0.02)
+            self.assertEqual(report["quality_thresholds"]["min_sharpness"], 0.00035)
+            self.assertEqual(report["validation_quality_pass_rate"], 1.0)
 
 
 if __name__ == "__main__":

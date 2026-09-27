@@ -4,6 +4,8 @@ The primary safety outcome is binary referable diabetic retinopathy, defined as 
 
 The validation sweep tests confidence thresholds from 0.00 to 0.99. An image is answered only if it passes the quality gate and reaches the confidence threshold. The calibration selects the highest-coverage threshold whose answered cases reach at least 90% referable-DR sensitivity while no more than 15% of all cases abstain. If no threshold meets both conditions, it records `calibration_target_met: false` and chooses the allowed threshold with the best answered sensitivity, then coverage and specificity. Test labels never influence this choice.
 
+The deterministic quality gate uses minimum centre contrast `0.020` and minimum sharpness `0.00035`. The contrast cutoff was revised using APTOS validation predictions to reduce excessive quality rejections while preserving the original blur check; the other checks are unchanged. On those validation predictions, quality passes increased from 283 to 319 of 550, but the joint sensitivity and abstention target was still not met. The validation quality pass rate is recorded in `evaluation_report.json` alongside the thresholds. Passing the gate does not establish clinical image adequacy, and loosening the gate does not by itself improve the vision model's sensitivity.
+
 ## Reported systems
 
 - **Always healthy baseline:** predicts every case as non-referable.
@@ -31,4 +33,4 @@ Sensitivity is `TP / (TP + FN)`, specificity is `TN / (TN + FP)`, and referable 
 
 APTOS images and generated results are intentionally excluded from Git. A completed run should be preserved with the submitted report or release artefacts so that reported numbers are traceable to the exact output files.
 
-The demonstration loads `selected_threshold` from `evaluation_report.json` when that file is present in `evaluation/results`. The report must match the configured model and revision. Without a completed evaluation, the demonstration clearly labels its 75% threshold as provisional. A failed calibration target is displayed as a warning; the selected threshold is still used so the demonstration matches the reported evaluation configuration.
+The demonstration loads `selected_threshold` from `evaluation_report.json` when that file is present in `evaluation/results`. The report must match the configured model, revision, and quality thresholds. Without a matching completed evaluation, the demonstration clearly labels its 75% threshold as provisional. A failed calibration target is displayed as a warning; the selected threshold is still used so the demonstration matches the reported evaluation configuration.

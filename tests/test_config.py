@@ -9,6 +9,7 @@ from retinaguard.config import (
     MODEL_REVISION,
     load_confidence_setting,
 )
+from retinaguard.quality import quality_thresholds
 
 
 class ConfidenceSettingTest(unittest.TestCase):
@@ -26,6 +27,7 @@ class ConfidenceSettingTest(unittest.TestCase):
                     {
                         "model_repo": MODEL_REPO_ID,
                         "model_revision": MODEL_REVISION,
+                        "quality_thresholds": quality_thresholds(),
                         "selected_threshold": 0.91,
                         "calibration_target_met": True,
                     }
@@ -52,6 +54,26 @@ class ConfidenceSettingTest(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 load_confidence_setting(path)
+
+    def test_report_for_old_quality_gate_uses_provisional_threshold(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "evaluation_report.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "model_repo": MODEL_REPO_ID,
+                        "model_revision": MODEL_REVISION,
+                        "selected_threshold": 0.65,
+                        "calibration_target_met": False,
+                        "quality_thresholds": {**quality_thresholds(), "min_contrast": 0.035},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            setting = load_confidence_setting(path)
+        self.assertEqual(setting.threshold, CONFIDENCE_THRESHOLD)
+        self.assertIn("quality gate changed", setting.source)
+        self.assertIsNone(setting.target_met)
 
 
 if __name__ == "__main__":

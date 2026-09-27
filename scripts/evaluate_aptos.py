@@ -14,7 +14,7 @@ from retinaguard.evaluation import (
     confusion_matrix,
     evaluation_summary,
 )
-from retinaguard.quality import assess_image_quality
+from retinaguard.quality import assess_image_quality, quality_thresholds
 from retinaguard.vision import VisionClassifier
 
 
@@ -212,6 +212,7 @@ def write_summary_markdown(summary, report, path):
         f"Validation target met: {'yes' if report['calibration_target_met'] else 'no'} "
         f"(target sensitivity {report['target_sensitivity']:.0%}; "
         f"maximum abstention {report['max_abstention_rate']:.0%}).",
+        f"Validation image-quality pass rate: {report['validation_quality_pass_rate']:.1%}.",
         f"Test image-quality pass rate: {report['test_quality_pass_rate']:.1%}.",
         "",
         "| System | Cases | Coverage | Sensitivity | Specificity | Accuracy | False negatives |",
@@ -313,6 +314,8 @@ def run_evaluation(args, classifier=None):
         "selected_threshold": calibration.threshold,
         "target_sensitivity": args.target_sensitivity,
         "max_abstention_rate": args.max_abstention_rate,
+        "quality_thresholds": quality_thresholds(),
+        "validation_quality_pass_rate": float(validation["quality_passed"].mean()),
         "calibration_target_met": calibration.target_met,
         "test_quality_pass_rate": float(test["quality_passed"].mean()),
         "test_quality_issue_counts": {

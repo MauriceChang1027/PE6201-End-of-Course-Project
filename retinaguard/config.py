@@ -36,6 +36,14 @@ def load_confidence_setting(report_path: str | Path | None = None) -> Confidence
         or report.get("model_revision") != MODEL_REVISION
     ):
         raise ValueError("The evaluation report does not match the configured vision model.")
+    from .quality import quality_thresholds
+
+    if report.get("quality_thresholds") != quality_thresholds():
+        return ConfidenceSetting(
+            CONFIDENCE_THRESHOLD,
+            "provisional default (quality gate changed; rerun evaluation)",
+            None,
+        )
     threshold = report.get("selected_threshold")
     if (
         isinstance(threshold, bool)
