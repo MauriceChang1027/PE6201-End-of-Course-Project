@@ -41,6 +41,8 @@ The vision model is downloaded at runtime from [`Aldahmashi/DR-EfficientNetB0`](
 
 The notebook downloads the model from Hugging Face. The first run therefore requires internet access and can take several minutes. No API key is stored in the notebook or repository.
 
+For a recorded demonstration without a local APTOS image, use the evaluation notebook's **Recording-ready Grade 3 demonstration** after its evaluation cells complete. It reuses the locked-test image and evaluation report in the same Colab runtime, verifies the image hash against `evidence/five_image_acceptance.json`, displays the image and Grad-CAM output, and generates a live OpenRouter draft from the `OPENROUTER_API_KEY` Colab secret. Run the two demonstration cells once before recording; rerunning them does not repeat the dataset download or full evaluation. Do not present this selected case as an accuracy estimate.
+
 For a demonstration using the evaluated confidence threshold, run the APTOS evaluation notebook first. If the MVP notebook uses the same Colab runtime, it reads `evaluation/results/evaluation_report.json` automatically. In a separate runtime, upload the exported `evaluation_report.json` to `/content` using Colab's Files panel before the analysis cell. When no report is present, the MVP displays the provisional 75% threshold. The evaluation results archive includes `results_summary.md` with measured results and limitations.
 
 ## Run the Streamlit interface
