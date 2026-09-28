@@ -1,0 +1,9 @@
+{
+  "model": "openai/gpt-4o-mini",
+  "cases": 5,
+  "validation_pass_rate": 1.0,
+  "fallback_rate": 0.0,
+  "mean_latency_seconds": 1.5657843850000064,
+  "displayed_blocked_term_rate": 0.0,
+  "note": "The displayed blocked-term rate is zero by construction. This validator does not prove that every possible unsupported clinical statement was detected."
+}

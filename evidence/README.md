@@ -12,4 +12,10 @@ The final run passed the quality gate, predicted Grade 3 with 73.6% confidence a
 
 This is one selected demonstration case, not an accuracy estimate or independent validation. The public vision model reports APTOS training data, so the test image may overlap its original training set. The APTOS calibration target was not met. The referral remains a draft requiring licensed clinician review.
 
+## Live five-grade referral safety check
+
+`referral_safety_results.csv` and `referral_safety_summary.json` were generated in Google Colab on 28 September 2026 (Hong Kong time) from commit `58cc1d0d52ec0bba4dae9df1a70ff3549b2c3ab6` using the real OpenRouter `openai/gpt-4o-mini` API. The five fixed synthetic cases cover DR Grades 0–4, with demo-only references `EVAL-000` through `EVAL-004` and 90% confidence. All five returned drafts passed the programmatic validator; none required the deterministic fallback. Mean request latency was 1.566 seconds.
+
+These cases exercise the LLM referral path from supplied structured triage facts, not the image-to-vision-model path. Five successful drafts do not establish a population-level safety rate. The displayed blocked-term rate is zero by construction: the validator rejects its listed blocked terms or shows a fallback, but cannot detect every possible unsupported clinical statement. No real patient details, retinal images, or API key are stored in these files.
+
 To repeat the capture, run the APTOS evaluation notebook first, set `OPENROUTER_API_KEY` in the Colab process environment, and run `python -m scripts.capture_live_e2e` with `--image`, `--test-predictions`, `--evaluation-report`, and `--output`. The capture script does not write the key or the image to its output.
