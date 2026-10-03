@@ -1,3 +1,5 @@
+"""Record five predetermined real-image workflow cases and safe LLM outcomes."""
+
 import argparse
 import csv
 import hashlib

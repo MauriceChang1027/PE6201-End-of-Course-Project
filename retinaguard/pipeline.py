@@ -1,3 +1,5 @@
+"""Run image-quality checks before vision grading, triage, and explanation."""
+
 from dataclasses import dataclass
 from pathlib import Path
 

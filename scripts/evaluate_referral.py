@@ -1,3 +1,5 @@
+"""Score five fixed synthetic referral cases through the real OpenRouter path."""
+
 import argparse
 import json
 import os

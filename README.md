@@ -12,7 +12,43 @@ RetinaGuard is a research prototype for diabetic retinopathy referral triage. It
 
 This project is not a medical device and must not be used for diagnosis or autonomous referral. The public vision model has been trained on APTOS 2019 only, has not been clinically validated for Hong Kong patients or local cameras, and performs unevenly across severity classes. Every output requires review by a licensed clinician.
 
-The LLM cannot change the image grade, confidence, urgency, or referral action. A prediction below 75% confidence is marked as an abstention and is not sent to the LLM as a normal referral result.
+The LLM cannot change the image grade, confidence, urgency, or referral action. The MVP uses a clearly labelled provisional 75% confidence threshold when no matching evaluation report is present. The completed APTOS evaluation selected 65% for its demonstration run, but its joint safety and abstention target was not met. A prediction below the active threshold is marked as an abstention and is not sent to the LLM as a normal referral result.
+
+## Product documentation
+
+The intended user is a primary care doctor reviewing a colour fundus photograph during a diabetes appointment. RetinaGuard is designed to help that doctor inspect an automated severity estimate and edit a draft referral; the doctor, not the software, decides what to do. This persona and workflow are proposed rather than observed clinical deployment.
+
+| Item | Demonstration contract |
+|---|---|
+| Input | One permitted JPG or PNG colour fundus image and a demo-only patient reference |
+| On-screen output | Image-quality decision, predicted APTOS grade 0–4, confidence, abstention or referral urgency, Grad-CAM overlay, and a three-sentence draft for clinician review |
+| External intelligence | Pinned EfficientNetB0 weights from Hugging Face for grading; OpenRouter `openai/gpt-4o-mini` for wording only |
+| Human decision | A licensed clinician reviews the image, grade, urgency, and draft; the prototype never sends a referral autonomously |
+
+```text
+[Fundus image] -> [Streamlit or Colab input]
+                           |
+                           v
+                 [Owned image-quality gate] -- reject --> [Human review]
+                           |
+                           v
+          [External EfficientNetB0 vision weights]
+                    |                 |
+                    v                 v
+          [Owned confidence and     [Owned Grad-CAM
+           referral rules]           attribution]
+                    |
+                    v
+          [Structured facts only] -> [External OpenRouter LLM]
+                                            |
+                                            v
+                              [Owned validator or safe fallback]
+                                            |
+                                            v
+                                [Clinician reviews draft]
+```
+
+The main outcome target was at least 90% sensitivity for referable DR (Grade 2 or above) with no more than 15% abstention. On the locked 550-image APTOS test split, the raw vision model reached 72.2% sensitivity and 97.6% specificity. Treating abstentions as human referrals raised operational sensitivity to 99.1%, but abstention was 66.5% and specificity fell to 52.0%; the joint target was **not met**. These same-dataset results are not independent clinical validation. The [evaluation results](evaluation/RESULTS.md) distinguish raw, answered-only, and operational views and show the baselines. The [data explainer](DATA.md) records provenance and access restrictions.
 
 ## MVP flow
 
@@ -21,7 +57,7 @@ Fundus image
     -> deterministic image-quality gate
     -> EfficientNetB0 five-grade prediction
     -> class-specific Grad-CAM attribution
-    -> 75% confidence gate
+    -> active confidence gate (65% evaluated or 75% provisional)
     -> deterministic referral rule
     -> structured facts only
     -> OpenRouter referral draft
@@ -41,7 +77,7 @@ The vision model is downloaded at runtime from [`Aldahmashi/DR-EfficientNetB0`](
 
 The notebook downloads the model from Hugging Face. The first run therefore requires internet access and can take several minutes. No API key is stored in the notebook or repository.
 
-For a recorded demonstration without a local APTOS image, use the evaluation notebook's **Recording-ready Grade 3 demonstration** after its evaluation cells complete. It reuses the locked-test image and evaluation report in the same Colab runtime, verifies the image hash against `evidence/five_image_acceptance.json`, displays the image and Grad-CAM output, and generates a live OpenRouter draft from the `OPENROUTER_API_KEY` Colab secret. Run the two demonstration cells once before recording; rerunning them does not repeat the dataset download or full evaluation. Do not present this selected case as an accuracy estimate.
+For a recorded demonstration without a local APTOS image, use the evaluation notebook's **Recording-ready Grade 3 demonstration** after its evaluation cells complete. It reuses the locked-test image and evaluation report in the same Colab runtime, verifies the image hash against `evidence/five_image_acceptance.json`, displays the image and Grad-CAM output, and generates a live OpenRouter draft from the `OPENROUTER_API_KEY` Colab secret. Run the two demonstration cells once before recording; rerunning them does not repeat the dataset download or full evaluation. A fresh Colab runtime loses downloaded data and generated results, so complete and pre-warm the evaluation on the day of recording. Do not present this selected case as an accuracy estimate.
 
 For a demonstration using the evaluated confidence threshold, run the APTOS evaluation notebook first. If the MVP notebook uses the same Colab runtime, it reads `evaluation/results/evaluation_report.json` automatically. In a separate runtime, upload the exported `evaluation_report.json` to `/content` using Colab's Files panel before the analysis cell. When no report is present, the MVP displays the provisional 75% threshold. The evaluation results archive includes `results_summary.md` with measured results and limitations.
 
@@ -104,7 +140,7 @@ Grad-CAM is presented only as a coarse model-attribution aid. It is not lesion s
 
 | Grade | Result | Demonstration action |
 |---:|---|---|
-| Any below 75% confidence | Abstain | Human specialist review required |
+| Any below the active confidence threshold | Abstain | Human specialist review required |
 | 0 | No DR | Continue routine screening |
 | 1 | Mild | Non-urgent clinical review and monitoring |
 | 2 | Moderate | Priority ophthalmology referral |
@@ -117,9 +153,12 @@ These are transparent demonstration rules, not validated clinical guidelines. Th
 
 ```text
 app.py                              Streamlit interface
+DATA.md                             Dataset provenance, hashes, and access limits
 notebooks/retinaguard_colab_mvp.ipynb  Colab demonstration
 notebooks/retinaguard_colab_evaluation.ipynb  Reproducible APTOS evaluation
 notebooks/retinaguard_colab_llm_evaluation.ipynb  Five-grade referral safety evaluation
+evaluation/RESULTS.md               Target-versus-actual metrics and interpretation
+evaluation/aggregate_report.json    Checked-in machine-readable aggregate metrics
 retinaguard/vision.py               Model loading and inference
 retinaguard/evaluation.py           Fixed split, metrics, and threshold calibration
 retinaguard/explainability.py       Grad-CAM generation and overlay

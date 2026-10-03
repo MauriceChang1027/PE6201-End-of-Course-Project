@@ -1,3 +1,5 @@
+"""Class-specific Grad-CAM maps and overlays for accepted vision predictions."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

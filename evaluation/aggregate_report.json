@@ -1,0 +1,108 @@
+{
+  "dataset": "APTOS 2019 training labels and images",
+  "labels_sha256": "b2a3479695922e62c83c94a1a9ef669b4b6d68cc26a1d7090ebedecdd7dd79a5",
+  "split_manifest_sha256": "3065294884f505d82ec3225b7c3c3690ccf1dd2ffb39cec4aa0805eb7762b4c4",
+  "model_repo": "Aldahmashi/DR-EfficientNetB0",
+  "model_revision": "fb8d14c59bd56aa17fe0dfdea04a83ecd2f2eeac",
+  "split_seed": 6201,
+  "split_counts": {
+    "train": 2562,
+    "test": 550,
+    "validation": 550
+  },
+  "referable_definition": "diagnosis >= 2",
+  "selected_threshold": 0.65,
+  "target_sensitivity": 0.9,
+  "max_abstention_rate": 0.15,
+  "quality_thresholds": {
+    "min_resolution": 224,
+    "min_brightness": 0.08,
+    "max_brightness": 0.9,
+    "min_contrast": 0.02,
+    "min_sharpness": 0.00035,
+    "min_field_contrast": 0.025,
+    "min_colourfulness": 0.035,
+    "min_red_dominance": 0.015
+  },
+  "validation_quality_pass_rate": 0.58,
+  "calibration_target_met": false,
+  "test_quality_pass_rate": 0.6145454545454545,
+  "test_quality_issue_counts": {
+    "issue:blur": 209,
+    "issue:low_contrast": 23,
+    "issue:fundus_plausibility": 2
+  },
+  "test_metrics": [
+    {
+      "system": "Always healthy baseline",
+      "n": 550,
+      "coverage": 1.0,
+      "abstention_rate": 0.0,
+      "sensitivity": 0.0,
+      "specificity": 1.0,
+      "accuracy": 0.5945454545,
+      "precision": null,
+      "tn": 327,
+      "fp": 0,
+      "fn": 223,
+      "tp": 0
+    },
+    {
+      "system": "Always refer baseline",
+      "n": 550,
+      "coverage": 1.0,
+      "abstention_rate": 0.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0,
+      "accuracy": 0.4054545455,
+      "precision": 0.4054545455,
+      "tn": 0,
+      "fp": 327,
+      "fn": 0,
+      "tp": 223
+    },
+    {
+      "system": "Vision model (raw)",
+      "n": 550,
+      "coverage": 1.0,
+      "abstention_rate": 0.0,
+      "sensitivity": 0.7219730942,
+      "specificity": 0.9755351682,
+      "accuracy": 0.8727272727,
+      "precision": 0.9526627219,
+      "tn": 319,
+      "fp": 8,
+      "fn": 62,
+      "tp": 161
+    },
+    {
+      "system": "Vision + abstention (answered only)",
+      "n": 184,
+      "coverage": 0.3345454545,
+      "abstention_rate": 0.6654545455,
+      "sensitivity": 0.8571428571,
+      "specificity": 1.0,
+      "accuracy": 0.9891304348,
+      "precision": 1.0,
+      "tn": 170,
+      "fp": 0,
+      "fn": 2,
+      "tp": 12
+    },
+    {
+      "system": "Vision + abstention (abstentions referred)",
+      "n": 550,
+      "coverage": 0.3345454545,
+      "abstention_rate": 0.6654545455,
+      "sensitivity": 0.9910313901,
+      "specificity": 0.5198776758,
+      "accuracy": 0.7109090909,
+      "precision": 0.5846560847,
+      "tn": 170,
+      "fp": 157,
+      "fn": 2,
+      "tp": 221
+    }
+  ],
+  "warning": "The public model reports APTOS training data; this evaluation may overlap its training set and is not independent clinical validation."
+}

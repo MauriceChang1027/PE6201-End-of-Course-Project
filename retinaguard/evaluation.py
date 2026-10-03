@@ -1,3 +1,5 @@
+"""Deterministic APTOS splits, threshold calibration, and test-set metrics."""
+
 from __future__ import annotations
 
 import hashlib

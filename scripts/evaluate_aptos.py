@@ -1,3 +1,5 @@
+"""Reproduce APTOS splits, quality checks, calibration, metrics, and plots."""
+
 import argparse
 import hashlib
 import json

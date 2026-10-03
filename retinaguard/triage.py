@@ -1,3 +1,5 @@
+"""Apply the confidence gate and fixed demonstration referral rules."""
+
 from dataclasses import dataclass
 
 from .config import CONFIDENCE_THRESHOLD, GRADE_LABELS

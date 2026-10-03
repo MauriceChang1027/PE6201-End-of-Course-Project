@@ -1,3 +1,5 @@
+"""Capture one real image-to-referral demonstration without saving an API key."""
+
 import argparse
 import csv
 import hashlib

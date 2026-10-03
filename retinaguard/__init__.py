@@ -1,3 +1,5 @@
+"""Public pipeline, vision, triage, quality, explanation, and referral interfaces."""
+
 from .explainability import GradCamError, GradCamExplainer, GradCamResult
 from .pipeline import AnalysisResult, RetinaGuardPipeline
 from .quality import QualityAssessment, QualityIssue, assess_image_quality

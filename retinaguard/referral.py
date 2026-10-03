@@ -1,3 +1,5 @@
+"""Generate constrained OpenRouter drafts and validate them against triage facts."""
+
 import json
 import re
 from collections.abc import Callable

@@ -1,3 +1,5 @@
+"""Deterministic image-quality heuristics used to reject unsuitable inputs."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

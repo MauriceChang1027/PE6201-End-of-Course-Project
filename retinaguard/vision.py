@@ -1,3 +1,5 @@
+"""Load pinned EfficientNetB0 weights and infer five APTOS severity grades."""
+
 import os
 from pathlib import Path
 from typing import Iterable

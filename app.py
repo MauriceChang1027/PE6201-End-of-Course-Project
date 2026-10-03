@@ -1,3 +1,5 @@
+"""Streamlit interface for clinician-reviewed image triage and referral drafts."""
+
 import hashlib
 import os
 

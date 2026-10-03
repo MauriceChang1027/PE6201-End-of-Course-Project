@@ -1,3 +1,5 @@
+"""Pinned model settings and confidence-threshold loading from evaluation reports."""
+
 import json
 import math
 from dataclasses import dataclass

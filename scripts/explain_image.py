@@ -1,3 +1,5 @@
+"""Export Grad-CAM images and metadata for one permitted fundus photograph."""
+
 import argparse
 import json
 from pathlib import Path
